@@ -6,7 +6,7 @@ A useful lib for download files.
 
 **Simple Update :**
 ```python
-from AsthoUpdater.AsthoUpdater import AsthoUpdater
+from AsthoUpdater import AsthoUpdater
 
 updater = AsthoUpdater(json_url='yourJsonUrl')
 updater.start_update()
