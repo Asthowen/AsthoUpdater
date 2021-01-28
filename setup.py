@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8", errors="ignore") as fh:
 
 setuptools.setup(
     name="AsthoUpdater",
-    version="0.1",
+    version="0.1.1",
     author="Asthowen",
     description="A useful lib for download files.",
     long_description=long_description,

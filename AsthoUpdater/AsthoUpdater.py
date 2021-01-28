@@ -1,8 +1,12 @@
-from urllib import request
+import requests
 import binascii
 import json
 import time
 import os
+
+
+class Constants(enumerate):
+    HEADERS = {'User-Agent': 'Mozilla/5.0'}
 
 
 class AsthoUpdater(object):
@@ -18,8 +22,7 @@ class AsthoUpdater(object):
             self.logger_name = "AsthoUpdater"
 
     def start_update(self):
-        json_to_download = request.Request(self.json_url, headers={'User-Agent': 'Mozilla/5.0'})
-        content = json.loads(request.urlopen(json_to_download).read())
+        content = json.loads(requests.get(self.json_url, headers=Constants.HEADERS).content)
 
         if content['maintenance'] != "off":
             self.logger("Error", "Maintenance mod activate, I can't download files !")
@@ -37,13 +40,15 @@ class AsthoUpdater(object):
             total_path = file['path'] + file['name']
 
             if not os.path.isfile(total_path) or self.__get_crc_32(total_path) != file['crc32']:
-                request.urlretrieve(file['url'], total_path)
+                with open(file['path'] + file['name'], 'wb') as f:
+                    f.write(requests.get(file['url'], allow_redirects=True, headers=Constants.HEADERS).content)
 
                 if self.__get_crc_32(file_path=total_path) != file['crc32']:
                     self.logger("Error",
                                 f"Error when download file : {file['name']}, the CRC32 is not correct, the CRC32 in JSON is {file['crc32']}, the real CRC32 of download's file is {self.__get_crc_32(file_path=total_path)}, I'm trying to redownload it !")
 
-                    request.urlretrieve(file['url'], file['path'] + file['name'])
+                    with open(file['path'] + file['name'], 'wb') as f:
+                        f.write(requests.get(file['url'], allow_redirects=True, headers=Constants.HEADERS).content)
 
                     if self.__get_crc_32(file_path=file['path'] + file['name']) != file['crc32']:
                         self.logger("Fatal Error", f"Same error, download of this file aborted !")
@@ -57,7 +62,7 @@ class AsthoUpdater(object):
 
                 else:
                     self.logger("Log",
-                                f"Downloaded file {file_number}/{self.total_files_to_download} ({file['name']} - {os.path.getsize(file['path'] + file['name']) / (1024*1024)} MB)")
+                                f"Downloaded file {file_number}/{self.total_files_to_download} ({file['name']} - {round(os.path.getsize(file['path'] + file['name']) / (1024 * 1024), 3)} MB)")
 
                 file_number += 1
 
