@@ -11,21 +11,24 @@ class Constants(enumerate):
 
 class AsthoUpdater(object):
 
-    def __init__(self, json_url: str, logger_state: bool = None, logger_name: str = None):
+    def __init__(
+            self,
+            json_url: str,
+            logger_state: bool = None,
+            logger_name: str = None
+    ):
         self.json_url = json_url
-        self.logger_state = logger_state
-        self.logger_name = logger_name
+        self.logger_state = True if logger_state is None else logger_state
+        self.logger_name = "AsthoUpdater" if logger_name is None else logger_name
+
         self.total_files_to_download = 0
         self.total_files_in_json = 0
-
-        if not logger_name:
-            self.logger_name = "AsthoUpdater"
 
     def start_update(self):
         content = json.loads(requests.get(self.json_url, headers=Constants.HEADERS).content)
 
         if content['maintenance'] != "off":
-            self.logger("Error", "Maintenance mod activate, I can't download files !")
+            self.logger("ERROR", "Maintenance mod activate, I can't download files!")
             return
 
         for file in content['files']:
@@ -44,52 +47,50 @@ class AsthoUpdater(object):
                     f.write(requests.get(file['url'], allow_redirects=True, headers=Constants.HEADERS).content)
 
                 if self.__get_crc_32(file_path=total_path) != file['crc32']:
-                    self.logger("Error",
-                                f"Error when download file : {file['name']}, the CRC32 is not correct, the CRC32 in JSON is {file['crc32']}, the real CRC32 of download's file is {self.__get_crc_32(file_path=total_path)}, I'm trying to redownload it !")
+                    self.logger("ERROR",
+                                f"Error when download file: {file['name']}, the CRC32 is not correct, I'm trying to re-download it!")
 
                     with open(file['path'] + file['name'], 'wb') as f:
                         f.write(requests.get(file['url'], allow_redirects=True, headers=Constants.HEADERS).content)
 
                     if self.__get_crc_32(file_path=file['path'] + file['name']) != file['crc32']:
-                        self.logger("Fatal Error", f"Same error, download of this file aborted !")
+                        self.logger("ERROR", f"Same error, download of this file aborted!")
                         os.remove(total_path)
-                        self.logger("Fatal Error", f"File removed !")
-
-
+                        self.logger("ERROR", f"File removed!")
                     else:
-                        self.logger("Log",
+                        self.logger("LOG",
                                     f"Downloaded file {file_number}/{self.total_files_to_download} ({file['name']} - {os.path.getsize(file['path'] + file['name']) / (1024 * 1024)} MB)")
 
                 else:
-                    self.logger("Log",
+                    self.logger("LOG",
                                 f"Downloaded file {file_number}/{self.total_files_to_download} ({file['name']} - {round(os.path.getsize(file['path'] + file['name']) / (1024 * 1024), 3)} MB)")
 
                 file_number += 1
 
-        self.logger("Log", "Update Finished !")
+        self.logger("LOG", "Update Finished!")
 
     @property
-    def get_total_files_to_download(self):
+    def get_total_files_to_download(self) -> int:
         return self.total_files_to_download
 
     @property
-    def get_logger_name(self):
+    def get_logger_name(self) -> str:
         return self.logger_name
 
     @property
-    def get_logger_state(self):
-        return True if self.logger_state is not None else False
+    def get_logger_state(self) -> bool:
+        return self.logger_state
 
     @property
-    def get_total_files_in_json(self):
+    def get_total_files_in_json(self) -> int:
         return self.total_files_in_json
 
     def logger(self, error_type: str, log: str):
-        if self.logger_state is True or self.logger_state is None:
-            print(f"[{self.logger_name}] [{time.strftime('%d/%m/20%y - %H:%M:%S')}] [{error_type}] {log}")
+        if self.logger_state:
+            print(f"[{self.logger_name}] [{time.strftime('%d/%m/%Y - %H:%M:%S')}] [{error_type}] {log}")
 
     @staticmethod
-    def __get_crc_32(file_path: str):
+    def __get_crc_32(file_path: str) -> str:
         return str(binascii.crc32(open(file_path, 'rb').read()) & 0xFFFFFFFF)
 
     def set_logger_state(self, state: bool):

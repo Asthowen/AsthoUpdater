@@ -1,9 +1,10 @@
 # AsthoUpdater
-
 A useful lib for download files.
 
-## Examples
+## Install prerequisites
+* Execute command : ```python3 -m pip install AsthoUpdater```
 
+## Examples
 **Simple Update :**
 ```python
 from AsthoUpdater import AsthoUpdater
@@ -55,12 +56,8 @@ set_json_url : Set json url (string)
 }
 ```
 
-## Install prerequisites
-* Execute command : ```pip3 install AsthoUpdater```
-
 ## Author
 [<img width="64" src="https://avatars3.githubusercontent.com/u/59535754?s=400&u=48aecdd175dd2dd8867ae063f1973b64d298220b&v=4" alt="Asthowen">](https://github.com/Asthowen)
 
 ## License
-
-**AsthoUpdater | Mozilla Public License 2.0**
+**[AsthoUpdater](https://github.com/Asthowen/AsthoUpdater) | [Mozilla Public License 2.0](https://github.com/Asthowen/AsthoUpdater/blob/main/LICENSE)**
