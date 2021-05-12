@@ -1,103 +1,129 @@
-import requests
+from AsthoUpdater.Exceptions import JsonNotFound
+from AsthoUpdater.Logger import Logger
+import async_timeout
 import binascii
-import json
-import time
+import hashlib
+import aiohttp
+import asyncio
 import os
 
 
-class Constants(enumerate):
-    HEADERS = {'User-Agent': 'Mozilla/5.0'}
-
-
 class AsthoUpdater(object):
-
     def __init__(
             self,
             json_url: str,
-            logger_state: bool = None,
-            logger_name: str = None
+            download_path: str,
+            download_timeout: int = 12,
+            overwrite_files: bool = False,
+            file_deleter: bool = False,
+            logger_status: bool = True,
+            logger_name: str = None,
+            algorithm: str = "sha512"
     ):
-        self.json_url = json_url
-        self.logger_state = True if logger_state is None else logger_state
-        self.logger_name = "AsthoUpdater" if logger_name is None else logger_name
+        self.__json_url = json_url
+        self.__download_path = download_path if download_path[-1] == '/' else download_path + '/'
+        self.__logger = Logger(logger_name, logger_status)
+        self.__download_timeout = download_timeout
+        self.__overwrite_files = overwrite_files
+        self.__file_deleter = file_deleter
+        self.__algorithm = algorithm
 
-        self.total_files_to_download = 0
-        self.total_files_in_json = 0
+        self.__json_content = dict
+        self.__client_session = aiohttp.ClientSession()
 
-    def start_update(self):
-        content = json.loads(requests.get(self.json_url, headers=Constants.HEADERS).content)
+        self.__file_to_download = 0
+        self.__file_downloaded = 0
 
-        if content['maintenance'] != "off":
-            self.logger("ERROR", "Maintenance mod activate, I can't download files!")
-            return
+    async def __aenter__(self) -> object:
+        return self
 
-        for file in content['files']:
-            self.total_files_in_json += 1
-            if not os.path.isfile(file['path'] + file['name']):
-                self.total_files_to_download += 1
+    async def __aexit__(self, *args) -> bool:
+        await self.close()
 
-        file_number = 1
+    async def __download_file(self, url):
+        if self.__overwrite_files or os.path.isfile(self.__download_path + url['name']) is False:
+            async with async_timeout.timeout(self.__download_timeout):
+                async with self.__client_session.get(url['url']) as r:
+                    with open(self.__download_path + url['name'], 'wb') as f:
+                        async for data in r.content.iter_chunked(1024):
+                            f.write(data)
+                    try:
+                        if self.__get_hash(self.__download_path + url['name']) == url[self.__algorithm]:
+                            self.__file_downloaded += 1
+                            self.__logger.log(f"File {url['name']} at {url['url']} has been downloaded.")
+                        else:
+                            self.__logger.log(
+                                f"File {url['name']} at {url['url']} has been downloaded but {self.__algorithm} is not valid.")
+                            os.remove(self.__download_path + url['name'])
+                    except KeyError:
+                        raise self.__logger.error("The hash algorithm specified isn't the one present in the json.")
 
-        for file in content['files']:
+    def __get_hash(self, file_path: str) -> str:
+        with open(file_path, "rb") as f:
+            content = f.read()
 
-            total_path = file['path'] + file['name']
+            if self.__algorithm == "sha256":
+                return hashlib.sha256(content).hexdigest()
+            elif self.__algorithm == "sha512":
+                return str(hashlib.sha512(content).hexdigest())
+            elif self.__algorithm == "crc32":
+                return str(binascii.crc32(content) & 0xFFFFFFFF)
+            elif self.__algorithm == "md5":
+                return str(hashlib.md5(content).hexdigest())
 
-            if not os.path.isfile(total_path) or self.__get_crc_32(total_path) != file['crc32']:
-                with open(file['path'] + file['name'], 'wb') as f:
-                    f.write(requests.get(file['url'], allow_redirects=True, headers=Constants.HEADERS).content)
+    async def get_all_files(self):
+        async with self.__client_session.get(self.__json_url) as r:
+            if r.status == 200:
+                self.__json_content = await r.json()
+                return self.__json_content
+            else:
+                raise JsonNotFound(self.__json_url)
 
-                if self.__get_crc_32(file_path=total_path) != file['crc32']:
-                    self.logger("ERROR",
-                                f"Error when download file: {file['name']}, the CRC32 is not correct, I'm trying to re-download it!")
+    async def download(self):
+        await self.get_all_files()
 
-                    with open(file['path'] + file['name'], 'wb') as f:
-                        f.write(requests.get(file['url'], allow_redirects=True, headers=Constants.HEADERS).content)
+        self.__file_to_download = len(self.__json_content['files'])
 
-                    if self.__get_crc_32(file_path=file['path'] + file['name']) != file['crc32']:
-                        self.logger("ERROR", f"Same error, download of this file aborted!")
-                        os.remove(total_path)
-                        self.logger("ERROR", f"File removed!")
-                    else:
-                        self.logger("LOG",
-                                    f"Downloaded file {file_number}/{self.total_files_to_download} ({file['name']} - {os.path.getsize(file['path'] + file['name']) / (1024 * 1024)} MB)")
+        if self.__file_to_download > 1:
+            if self.__json_content['maintenance'] != 'on':
+                self.__logger.log('Start to download.')
 
+                await asyncio.gather(*[self.__download_file(url) for url in self.__json_content['files']])
+
+                if self.__file_downloaded:
+                    self.__logger.log('All files has been downloaded.')
                 else:
-                    self.logger("LOG",
-                                f"Downloaded file {file_number}/{self.total_files_to_download} ({file['name']} - {round(os.path.getsize(file['path'] + file['name']) / (1024 * 1024), 3)} MB)")
+                    self.__logger.log('No files to re-download.')
+            else:
+                self.__logger.warn('Maintenance mode activated.')
+        else:
+            self.__logger.log('No files to download.')
 
-                file_number += 1
+        if self.__file_deleter:
+            await self.file_deleter()
 
-        self.logger("LOG", "Update Finished!")
+    async def file_deleter(self):
+        file_list = [
+            self.__download_path + x['path'] + x['name'] if x['path'] != '/' else self.__download_path + x['name'] for x
+            in self.__json_content['files']
+        ]
+
+        for r, d, f in os.walk(self.__download_path):
+            for file in f:
+                if os.path.join(r, file) not in file_list:
+                    os.remove(os.path.join(r, file))
+
+    async def close(self) -> bool:
+        if self.__client_session is not None:
+            await self.__client_session.close()
+            return True
+        else:
+            return False
 
     @property
     def get_total_files_to_download(self) -> int:
-        return self.total_files_to_download
+        return self.__file_to_download
 
     @property
-    def get_logger_name(self) -> str:
-        return self.logger_name
-
-    @property
-    def get_logger_state(self) -> bool:
-        return self.logger_state
-
-    @property
-    def get_total_files_in_json(self) -> int:
-        return self.total_files_in_json
-
-    def logger(self, error_type: str, log: str):
-        if self.logger_state:
-            print(f"[{self.logger_name}] [{time.strftime('%d/%m/%Y - %H:%M:%S')}] [{error_type}] {log}")
-
-    @staticmethod
-    def __get_crc_32(file_path: str) -> str:
-        return str(binascii.crc32(open(file_path, 'rb').read()) & 0xFFFFFFFF)
-
-    def set_logger_state(self, state: bool):
-        self.logger_state = state
-
-    def set_logger_name(self, logger_name: str):
-        self.logger_name = logger_name
-
-    def set_json_url(self, json_url: str):
-        self.json_url = json_url
+    def get_total_files_downloaded(self) -> int:
+        return self.__file_downloaded
