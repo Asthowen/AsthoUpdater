@@ -18,7 +18,8 @@ class AsthoUpdater(object):
             file_deleter: bool = False,
             logger_status: bool = True,
             logger_name: str = None,
-            algorithm: str = "sha512"
+            algorithm: str = "sha512",
+            download_limit: int = 10
     ):
         self.__json_url = json_url
         self.__download_path = download_path if download_path[-1] == '/' else download_path + '/'
@@ -27,6 +28,7 @@ class AsthoUpdater(object):
         self.__overwrite_files = overwrite_files
         self.__file_deleter = file_deleter
         self.__algorithm = algorithm
+        self.__download_limit = download_limit
 
         self.__json_content = dict
         self.__client_session = aiohttp.ClientSession()
@@ -38,7 +40,41 @@ class AsthoUpdater(object):
         return self
 
     async def __aexit__(self, *args) -> bool:
-        await self.close()
+        return await self.close()
+
+    def __get_hash(self, file_path: str) -> str:
+        with open(file_path, "rb") as f:
+            content = f.read()
+
+            if self.__algorithm == "sha256":
+                return hashlib.sha256(content).hexdigest()
+            elif self.__algorithm == "sha512":
+                return str(hashlib.sha512(content).hexdigest())
+            elif self.__algorithm == "crc32":
+                return str(binascii.crc32(content) & 0xFFFFFFFF)
+            elif self.__algorithm == "md5":
+                return str(hashlib.md5(content).hexdigest())
+
+    @staticmethod
+    async def __limit_tasks(
+            number: int,
+            *tasks
+    ):
+        semaphore = asyncio.Semaphore(number)
+
+        async def sem_task(task):
+            async with semaphore:
+                await task
+
+        await asyncio.gather(*(sem_task(task) for task in tasks))
+
+    async def get_all_files(self):
+        async with self.__client_session.get(self.__json_url) as r:
+            if r.status == 200:
+                self.__json_content = await r.json()
+                return self.__json_content
+            else:
+                raise JsonNotFound(self.__json_url)
 
     async def __download_file(self, url):
         if self.__overwrite_files or os.path.isfile(self.__download_path + url['name']) is False:
@@ -58,27 +94,6 @@ class AsthoUpdater(object):
                     except KeyError:
                         raise self.__logger.error("The hash algorithm specified isn't the one present in the json.")
 
-    def __get_hash(self, file_path: str) -> str:
-        with open(file_path, "rb") as f:
-            content = f.read()
-
-            if self.__algorithm == "sha256":
-                return hashlib.sha256(content).hexdigest()
-            elif self.__algorithm == "sha512":
-                return str(hashlib.sha512(content).hexdigest())
-            elif self.__algorithm == "crc32":
-                return str(binascii.crc32(content) & 0xFFFFFFFF)
-            elif self.__algorithm == "md5":
-                return str(hashlib.md5(content).hexdigest())
-
-    async def get_all_files(self):
-        async with self.__client_session.get(self.__json_url) as r:
-            if r.status == 200:
-                self.__json_content = await r.json()
-                return self.__json_content
-            else:
-                raise JsonNotFound(self.__json_url)
-
     async def download(self):
         await self.get_all_files()
 
@@ -89,6 +104,8 @@ class AsthoUpdater(object):
                 self.__logger.log('Start to download.')
 
                 await asyncio.gather(*[self.__download_file(url) for url in self.__json_content['files']])
+                await self.__limit_tasks(self.__download_limit,
+                                         *[self.__download(element) for element in self.images_list])
 
                 if self.__file_downloaded:
                     self.__logger.log('All files has been downloaded.')

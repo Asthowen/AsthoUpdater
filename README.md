@@ -33,6 +33,7 @@ file_deleter: If you want dl older files, optionnal, False at default (bool)
 logger_status: If you want enable/disable the logger, True at default (bool)
 logger_name: If you want set the logger name, AsthoUpdater at default (str)
 algorithm: If you want set the used algorithm, sha512 at default (str)
+download_limit: Limit the number of files that can be downloaded simultaneously, 10 at default (int)
 ```
 
 ### AsthoUpdater properties
