@@ -1,4 +1,4 @@
-name: Publish AsthoUpdater to Test-PyPI
+name: Publish AsthoUpdater to Test-PyPI and PyPI
 
 on: push
 

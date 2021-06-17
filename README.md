@@ -1,7 +1,16 @@
-# AsthoUpdater
-[![forthebadge made-with-python](https://ForTheBadge.com/images/badges/made-with-python.svg)](https://www.python.org/) [![forthebadge](https://forthebadge.com/images/badges/uses-git.svg)](https://github.com/)
-
-AsthoUpdater is a useless asynchronous lib to update files.
+<h1 align="center">
+  AsthoUpdater
+</h1>
+<p align="center">
+    <img src="https://ForTheBadge.com/images/badges/made-with-python.svg">
+    <img src="https://forthebadge.com/images/badges/uses-git.svg">
+    <br>
+    <img src="https://img.shields.io/github/license/Asthowen/AsthoUpdater?style=for-the-badge">
+    <img src="https://img.shields.io/github/stars/Asthowen/AsthoUpdater?style=for-the-badge">
+</p>
+<h3 align="center">
+    <strong>AsthoUpdater is a useless asynchronous lib to update files.</strong>
+</h3>
 
 ## Made with
 * [**aiohttp**](https://pypi.org/project/aiohttp/)
@@ -24,7 +33,7 @@ async with AsthoUpdater("jsonUrl", "pathToUpdate") as a:
 ```
 
 ### AsthoUpdater args
-```
+```yaml
 json_url: Your json url, required (str)
 download_path: The download path, required (str)
 download_timeout: The timeout to download file, optionnal, 12 at default (int)
@@ -37,7 +46,7 @@ download_limit: Limit the number of files that can be downloaded simultaneously,
 ```
 
 ### AsthoUpdater properties
-```
+```yaml
 get_total_files_to_download: Return total file to download (int)
 get_total_files_downloaded: Return total files downloaded (int)
 ```
