@@ -1,6 +1,7 @@
 from AsthoUpdater.Exceptions import JsonNotFound
 from AsthoUpdater.Logger import Logger
 import async_timeout
+import aiofiles
 import binascii
 import hashlib
 import aiohttp
@@ -18,11 +19,11 @@ class AsthoUpdater(object):
             file_deleter: bool = False,
             logger_status: bool = True,
             logger_name: str = None,
-            algorithm: str = "sha512",
+            algorithm: str = 'sha512',
             download_limit: int = 10
     ):
         self.__json_url = json_url
-        self.__download_path = download_path if download_path[-1] == '/' else download_path + '/'
+        self.__download_path = download_path if download_path[-1] == os.sep else download_path + os.sep
         self.__logger = Logger(logger_name, logger_status)
         self.__download_timeout = download_timeout
         self.__overwrite_files = overwrite_files
@@ -42,17 +43,17 @@ class AsthoUpdater(object):
     async def __aexit__(self, *args) -> bool:
         return await self.close()
 
-    def __get_hash(self, file_path: str) -> str:
-        with open(file_path, "rb") as f:
-            content = f.read()
+    async def __get_hash(self, file_path: str) -> str:
+        async with aiofiles.open(file_path, 'rb') as f:
+            content = await f.read()
 
-            if self.__algorithm == "sha256":
+            if self.__algorithm == 'sha256':
                 return hashlib.sha256(content).hexdigest()
-            elif self.__algorithm == "sha512":
+            elif self.__algorithm == 'sha512':
                 return str(hashlib.sha512(content).hexdigest())
-            elif self.__algorithm == "crc32":
+            elif self.__algorithm == 'crc32':
                 return str(binascii.crc32(content) & 0xFFFFFFFF)
-            elif self.__algorithm == "md5":
+            elif self.__algorithm == 'md5':
                 return str(hashlib.md5(content).hexdigest())
 
     @staticmethod
@@ -64,9 +65,9 @@ class AsthoUpdater(object):
 
         async def sem_task(task):
             async with semaphore:
-                await task
+                return await task
 
-        await asyncio.gather(*(sem_task(task) for task in tasks))
+        return await asyncio.gather(*(sem_task(task) for task in tasks))
 
     async def get_all_files(self):
         async with self.__client_session.get(self.__json_url) as r:
@@ -80,16 +81,19 @@ class AsthoUpdater(object):
         if self.__overwrite_files or os.path.isfile(self.__download_path + url['name']) is False:
             async with async_timeout.timeout(self.__download_timeout):
                 async with self.__client_session.get(url['url']) as r:
-                    with open(self.__download_path + url['name'], 'wb') as f:
+                    async with aiofiles.open(self.__download_path + url['name'], 'wb') as f:
                         async for data in r.content.iter_chunked(1024):
-                            f.write(data)
+                            await f.write(data)
                     try:
-                        if self.__get_hash(self.__download_path + url['name']) == url[self.__algorithm]:
+                        file_hash = await self.__get_hash(self.__download_path + url['name'])
+
+                        if file_hash == url[self.__algorithm]:
                             self.__file_downloaded += 1
                             self.__logger.log(f"File {url['name']} at {url['url']} has been downloaded.")
                         else:
                             self.__logger.log(
-                                f"File {url['name']} at {url['url']} has been downloaded but {self.__algorithm} is not valid.")
+                                f"File {url['name']} at {url['url']} has been downloaded but {self.__algorithm} is not valid."
+                            )
                             os.remove(self.__download_path + url['name'])
                     except KeyError:
                         raise self.__logger.error("The hash algorithm specified isn't the one present in the json.")
@@ -103,9 +107,10 @@ class AsthoUpdater(object):
             if self.__json_content['maintenance'] != 'on':
                 self.__logger.log('Start to download.')
 
-                await asyncio.gather(*[self.__download_file(url) for url in self.__json_content['files']])
-                await self.__limit_tasks(self.__download_limit,
-                                         *[self.__download(element) for element in self.images_list])
+                await self.__limit_tasks(
+                    self.__download_limit,
+                    *[self.__download_file(element) for element in self.__json_content['files']]
+                )
 
                 if self.__file_downloaded:
                     self.__logger.log('All files has been downloaded.')

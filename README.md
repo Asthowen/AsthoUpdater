@@ -9,15 +9,16 @@
     <img src="https://img.shields.io/github/stars/Asthowen/AsthoUpdater?style=for-the-badge">
 </p>
 <h3 align="center">
-    <strong>AsthoUpdater is a useless asynchronous lib to update files.</strong>
+    <strong>A lib for update files written in Python.</strong>
 </h3>
 
 ## Made with
-* [**aiohttp**](https://pypi.org/project/aiohttp/)
 * [**async-timeout**](https://pypi.org/project/async-timeout/)
+* [**aiofiles**](https://pypi.org/project/aiofiles/)
+* [**aiohttp**](https://pypi.org/project/aiohttp/)
 
 ## Install prerequisites
-* Execute command: ```python3 -m pip install AsthoUpdater```
+* Execute command: ```pip3 install AsthoUpdater```
 
 ## Examples
 ### Simple Update
@@ -52,8 +53,8 @@ get_total_files_downloaded: Return total files downloaded (int)
 ```
 
 ### AsthoUpdater json example
-<br>
 If you not use sha512, you must change sha512 to the one you want.
+<br>
 
 ```json
 {
@@ -76,7 +77,7 @@ If you not use sha512, you must change sha512 to the one you want.
 ```
 
 ## Author
-[<img width="64" src="https://avatars3.githubusercontent.com/u/59535754?s=400&u=48aecdd175dd2dd8867ae063f1973b64d298220b&v=4" alt="Asthowen">](https://github.com/Asthowen)
+[<img width="45" src="https://avatars3.githubusercontent.com/u/59535754?s=400&u=48aecdd175dd2dd8867ae063f1973b64d298220b&v=4" alt="Asthowen">](https://github.com/Asthowen)
 
 ## License
-**[AsthoUpdater](https://github.com/Asthowen/AsthoUpdater) | [Mozilla Public License 2.0](https://github.com/Asthowen/AsthoUpdater/blob/main/LICENSE)**
+**[AsthoUpdater](https://github.com/Asthowen/AsthoUpdater) | [GNU General Public License v3.0](https://github.com/Asthowen/AsthoUpdater/blob/main/LICENSE)**
