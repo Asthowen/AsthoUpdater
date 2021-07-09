@@ -10,23 +10,25 @@ class Colors(enumerate):
 class Logger(object):
     def __init__(
             self,
-            name: str = None,
-            activated: bool = True
+            name: str = 'AsthoUpdater',
+            activated: bool = True,
+            date_format: str = '%H:%M:%S - %d/%m/%Y'
     ):
-        self.name = name if name is not None else "AsthoUpdater"
+        self.name = name
         self.activated = activated
+        self.date_format = date_format
 
     def log(self, log: str):
         if self.activated:
-            log = f"[{time.strftime('%H:%M:%S - %d/%m/%Y', time.localtime())}] [{self.name}] [LOG] {log}"
+            log = f"[{time.strftime(self.date_format, time.localtime())}] [{self.name}] [LOG] {log}"
             print(log)
 
     def warn(self, warn: str):
         if self.activated:
-            warn = f"[{time.strftime('%H:%M:%S - %d/%m/%Y', time.localtime())}] [{self.name}] [WARN] {warn}"
+            warn = f"[{time.strftime(self.date_format, time.localtime())}] [{self.name}] [WARN] {warn}"
             print(Colors.CYAN + warn + Colors.END_LINE)
 
     def error(self, error: str):
         if self.activated:
-            error = f"[{time.strftime('%H:%M:%S - %d/%m/%Y', time.localtime())}] [{self.name}] [ERROR] {error}"
+            error = f"[{time.strftime(self.date_format, time.localtime())}] [{self.name}] [ERROR] {error}"
             print(Colors.RED + error + Colors.END_LINE)
