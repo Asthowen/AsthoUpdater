@@ -5,8 +5,10 @@ with open("README.md", "r", encoding="utf-8", errors="ignore") as f:
 
 setuptools.setup(
     name="AsthoUpdater",
-    version="0.2.4",
+    version="0.2.5",
     author="Asthowen",
+    author_email="contant@asthowen.fr",
+    license="GNU v3.0",
     description="A lib for update files written in Python.",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -14,5 +16,5 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     python_requires='>= 3.6',
     include_package_data=True,
-    install_requires=['aiohttp', 'async-timeout', 'aiohttp']
+    install_requires=['aiohttp', 'aiofiles', 'async-timeout']
 )

@@ -2,11 +2,22 @@
   AsthoUpdater
 </h1>
 <p align="center">
-    <img src="https://ForTheBadge.com/images/badges/made-with-python.svg">
-    <img src="https://forthebadge.com/images/badges/uses-git.svg">
+    <a href="https://www.python.org/">
+        <img src="https://forthebadge.com/images/badges/made-with-python.svg" alt="Made With Python">
+    </a>
+    <a href="https://github.com/Asthowen/AsthoUpdater">
+        <img src="https://forthebadge.com/images/badges/uses-git.svg" alt="Uses git">
+    </a>
     <br>
-    <img src="https://img.shields.io/github/license/Asthowen/AsthoUpdater?style=for-the-badge">
-    <img src="https://img.shields.io/github/stars/Asthowen/AsthoUpdater?style=for-the-badge">
+      <a href="https://github.com/Asthowen/AsthoUpdater">
+        <img src="https://img.shields.io/pypi/v/AsthoUpdater?style=for-the-badge" alt="PyPI version">
+    </a>
+    <a href="https://github.com/Asthowen/AsthoUpdater/blob/main/LICENSE">
+        <img src="https://img.shields.io/github/license/Asthowen/AsthoUpdater?style=for-the-badge" alt="License">
+    </a>
+    <a href="https://github.com/Asthowen/AsthoUpdater/stargazers">
+        <img src="https://img.shields.io/github/stars/Asthowen/AsthoUpdater?style=for-the-badge" alt="Stars">
+    </a>
 </p>
 <h3 align="center">
     <strong>A lib for update files written in Python.</strong>
@@ -17,8 +28,11 @@
 * [**aiofiles**](https://pypi.org/project/aiofiles/)
 * [**aiohttp**](https://pypi.org/project/aiohttp/)
 
-## Install prerequisites
-* Execute command: ```pip3 install AsthoUpdater```
+## Install
+Execute the command:
+```bash
+pip3 install AsthoUpdater
+```
 
 ## Examples
 ### Simple Update
@@ -27,7 +41,7 @@ By default, the verification algorithm is sha512, you can choose another one wit
 If you want to use another one you can contact me.
 
 ```python
-from AsthoUpdater import AsthoUpdater
+from astho_updater import AsthoUpdater
 
 async with AsthoUpdater("jsonUrl", "pathToUpdate") as a:
     await a.download()
@@ -41,8 +55,9 @@ download_timeout: The timeout to download file, optionnal, 12 at default (int)
 overwrite_files: If you want re-download all files, optionnal, False at default (bool)
 file_deleter: If you want dl older files, optionnal, False at default (bool)
 logger_status: If you want enable/disable the logger, optionnal, True at default (bool)
-logger_name: If you want set the logger name, optionnal, AsthoUpdater at default (str)
-algorithm: If you want set the used algorithm, optionnal, sha512 at default (str)
+logger_name: If you want set the logger name, optionnal, 'astho_updater' at default (str)
+logger_date_format: If you want set the logger name format, optionnal, '%H:%M:%S - %d/%m/%Y' at default (str)
+algorithm: If you want set the used algorithm, optionnal, 'sha512' at default (str)
 download_limit: Limit the number of files that can be downloaded simultaneously, optionnal, 10 at default (int)
 ```
 
@@ -53,21 +68,18 @@ get_total_files_downloaded: Return total files downloaded (int)
 ```
 
 ### AsthoUpdater json example
-If you not use sha512, you must change sha512 to the one you want.
-<br>
-
 ```json
 {
   "maintenance": "off",
   "files": [
       {
-        "sha512": "theSha512",
+        "checksum": "theChecksum",
         "name": "filename",
         "url": "linkOfFile",
         "path": "pathOfFile"
       },
       {
-        "sha512": "theSha512",
+        "checksum": "theChecksum",
         "name": "filename",
         "url": "linkOfFile",
         "path": "pathOfFile"
