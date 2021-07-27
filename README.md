@@ -3,10 +3,10 @@
 </h1>
 <p align="center">
     <a href="https://www.python.org/">
-        <img src="https://forthebadge.com/images/badges/made-with-python.svg" alt="Made With Python">
+        <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Made With Python">
     </a>
     <a href="https://github.com/Asthowen/AsthoUpdater">
-        <img src="https://forthebadge.com/images/badges/uses-git.svg" alt="Uses git">
+        <img src="https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white" alt="Use git">
     </a>
     <br>
       <a href="https://github.com/Asthowen/AsthoUpdater">
@@ -36,7 +36,6 @@ pip3 install AsthoUpdater
 
 ## Examples
 ### Simple Update
-
 By default, the verification algorithm is sha512, you can choose another one with the `algorithm` parameter, available: sha256, sha512, crc32, md5. 
 If you want to use another one you can contact me.
 

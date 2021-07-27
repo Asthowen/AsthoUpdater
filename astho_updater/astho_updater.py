@@ -38,10 +38,10 @@ class AsthoUpdater(object):
         self.__file_to_download = 0
         self.__file_downloaded = 0
 
-    async def __aenter__(self) -> object:
+    async def __aenter__(self):
         return self
 
-    async def __aexit__(self, *args) -> bool:
+    async def __aexit__(self, *args):
         return await self.close()
 
     @staticmethod
